@@ -71,7 +71,6 @@ function Card() {
             this.flip();
             this.game.judge(this);
         }
-
     };
 }
 
@@ -79,17 +78,22 @@ function GradeModule() {
     let stars = $(".stars .fa");
     let maxGrade = stars.length;
     this.grade = maxGrade;
-    this.step = 0;
+
+    this.updateMoves = function(step) {
+
+    }
 
     this.setGrade = function(grade) {
-        this.grade = grade;
+        updateStar.call(this, grade);
 
     };
 
     function updateStar(grade) {
-        let ne = maxGrade - grade
-        if (ne > 0) {
-
+        if (maxGrade > grade) {
+            for (let i = maxGrade - 1; i > (grade - 1); i--) {
+                let star = stars[i];
+                $(stars[i]).addClass("fa-star-o").removeClass("fa-star");
+            }
         }
 
     }
@@ -100,6 +104,7 @@ function Game() {
     this.secendCard = null;
     this.isFirst = true;
     this.matchedGroup = 0;
+    this.GradeModule = new GradeModule();
     let step = 0;
 
     this.judge = function(card) {
@@ -130,10 +135,15 @@ function Game() {
     function grade() {
         if (step < 16) {
             console.log("3 star");
+            this.GradeModule.setGrade(3);
         } else if (step < 24) {
+            this.GradeModule.setGrade(2);
             console.log("2 star")
-        } else {
+        } else if (step < 32) {
+            this.GradeModule.setGrade(1);
             console.log('1 star');
+        } else {
+            this.GradeModule.setGrade(0);
         }
     }
 
@@ -198,5 +208,6 @@ function refresh() {
         $(cardEle).removeClass().addClass('card');
         $(cardEle).children(".fa").removeClass().addClass('fa');
     }
+    $(".star .fa").removeClass("fa-star-o").addClass("fa-star");
     startNewGame();
 }
