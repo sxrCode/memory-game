@@ -89,7 +89,7 @@ function GradeModule() {
     };
 
     function updateStar(grade) {
-        if (maxGrade > grade) {
+        if (maxGrade > grade && grade >= 0) {
             for (let i = maxGrade - 1; i > (grade - 1); i--) {
                 let star = stars[i];
                 $(stars[i]).addClass("fa-star-o").removeClass("fa-star");
@@ -99,23 +99,82 @@ function GradeModule() {
     }
 }
 
-function Game() {
-    this.firstCard = null;
-    this.secendCard = null;
-    this.isFirst = true;
-    this.matchedGroup = 0;
-    this.GradeModule = new GradeModule();
+;
+(function() {
+    var gameManager = new GameManager();
+    $('.restart').bind("click", function() { gameManager.refresh(); });
+    gameManager.refresh();
+})();
+
+function GameManager() {
+    var game;
+    var timer = new Timer();
+
+    this.refresh = function() {
+        $(".moves").text("" + 0);
+        let cardEles = document.getElementsByClassName("card");
+        for (let i = 0; i < cardEles.length; i++) {
+            let cardEle = cardEles[i];
+            $(cardEle).unbind();
+            $(cardEle).removeClass().addClass('card');
+            $(cardEle).children(".fa").removeClass().addClass('fa');
+        }
+        $(".star .fa").removeClass("fa-star-o").addClass("fa-star");
+        startNewGame.call(this);
+    };
+
+    function startNewGame() {
+        game = new Game(this);
+        let icons = ["fa-diamond", "fa-paper-plane-o", "fa-anchor", "fa-bolt", "fa-cube", "fa-leaf", "fa-bicycle", "fa-bomb"];
+
+        let cards = [];
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 2; j++) {
+                let card = new Card();
+                card.setFlag(i);
+                card.iconClass = icons[i];
+                cards.push(card);
+            }
+        }
+        cards = shuffle(cards);
+
+        let cardEles = document.getElementsByClassName("card");
+        for (let i = 0; i < cardEles.length; i++) {
+            let cardEle = cardEles[i];
+            let card = cards[i];
+            $(cardEle).bind("click", function() { card.dealClick(); });
+            $(cardEle).children(".fa").addClass(card.iconClass);
+            card.cardEle = cardEle;
+            card.game = game;
+        }
+        timer.start();
+    }
+
+    this.onWin = function(step) {
+        timer.stop();
+        console.log("you are winner with " + step + " step and " + timer.getTime() + " mils!");
+    }
+
+}
+
+function Game(manager) {
+    var firstCard = null;
+    var secendCard = null;
+    var isFirst = true;
+    var matchedGroup = 0;
+    var gradeModule = new GradeModule();
     let step = 0;
+    var gameManager = manager;
 
     this.judge = function(card) {
 
         setTimeout(function() {
-            if (this.isFirst) {
-                this.firstCard = card;
-                this.isFirst = false;
+            if (isFirst) {
+                firstCard = card;
+                isFirst = false;
             } else {
-                this.secendCard = card;
-                this.isFirst = true;
+                secendCard = card;
+                isFirst = true;
                 matchCard.call(this);
                 grade.call(this);
             }
@@ -124,90 +183,77 @@ function Game() {
     };
 
     function matchCard() {
-        if (this.firstCard.getFlag() === this.secendCard.getFlag()) {
+        if (firstCard.getFlag() === secendCard.getFlag()) {
             dealMatchSuccess.call(this);
         } else {
             dealMatchFailure.call(this);
         }
         step++;
+        $(".moves").text("" + step);
     }
 
     function grade() {
         if (step < 16) {
             console.log("3 star");
-            this.GradeModule.setGrade(3);
+            gradeModule.setGrade(3);
         } else if (step < 24) {
-            this.GradeModule.setGrade(2);
+            gradeModule.setGrade(2);
             console.log("2 star")
         } else if (step < 32) {
-            this.GradeModule.setGrade(1);
+            gradeModule.setGrade(1);
             console.log('1 star');
         } else {
-            this.GradeModule.setGrade(0);
+            gradeModule.setGrade(0);
         }
     }
 
     function dealMatchSuccess() {
-        this.matchedGroup++;
-        this.firstCard.onMatchSuccess();
-        this.secendCard.onMatchSuccess();
-        if (this.matchedGroup == 8) {
+        matchedGroup++;
+        firstCard.onMatchSuccess();
+        secendCard.onMatchSuccess();
+        if (matchedGroup == 8) {
             winGame.call(this);
         }
     }
 
     function dealMatchFailure() {
-        this.firstCard.onMatchFailure();
-        this.secendCard.onMatchFailure();
-        this.firstCard = null;
-        this.secendCard = null;
+        firstCard.onMatchFailure();
+        secendCard.onMatchFailure();
+        firstCard = null;
+        secendCard = null;
     }
 
     function winGame() {
-        console.log('you are winner!');
+        gameManager.onWin(step);
     }
 }
 
-;
-(function() {
-    $('.restart').bind("click", function() { refresh(); });
-    refresh();
-})();
+function Timer(callback) {
+    var number = 0;
+    var listener = arguments[0];
+    var timer;
 
-function startNewGame() {
-    let game = new Game();
-    let icons = ["fa-diamond", "fa-paper-plane-o", "fa-anchor", "fa-bolt", "fa-cube", "fa-leaf", "fa-bicycle", "fa-bomb"];
+    this.start = function() {
+        number = 0;
+        time1.call(this);
+    };
 
-    let cards = [];
-    for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 2; j++) {
-            let card = new Card();
-            card.setFlag(i);
-            card.iconClass = icons[i];
-            cards.push(card);
+    this.stop = function() {
+        if (timer) {
+            clearTimeout(timer);
         }
     }
-    cards = shuffle(cards);
 
-    let cardEles = document.getElementsByClassName("card");
-    for (let i = 0; i < cardEles.length; i++) {
-        let cardEle = cardEles[i];
-        let card = cards[i];
-        $(cardEle).bind("click", function() { card.dealClick(); });
-        $(cardEle).children(".fa").addClass(card.iconClass);
-        card.cardEle = cardEle;
-        card.game = game;
+    function time1() {
+        number++;
+        if (listener instanceof Function) {
+            listener(number);
+        }
+        timer = setTimeout(time1.bind(this), 1000);
     }
-}
 
-function refresh() {
-    let cardEles = document.getElementsByClassName("card");
-    for (let i = 0; i < cardEles.length; i++) {
-        let cardEle = cardEles[i];
-        $(cardEle).unbind();
-        $(cardEle).removeClass().addClass('card');
-        $(cardEle).children(".fa").removeClass().addClass('fa');
+    this.getTime = function() {
+        return number;
     }
-    $(".star .fa").removeClass("fa-star-o").addClass("fa-star");
-    startNewGame();
+
 }
