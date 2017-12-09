@@ -1,102 +1,6 @@
-/*
- * Create a list that holds all of your cards
+/**
+ * 入口方法
  */
-
-
-/*
- * Display the cards on the page
- *   - shuffle the list of cards using the provided "shuffle" method below
- *   - loop through each card and create its HTML
- *   - add each card's HTML to the page
- */
-
-// Shuffle function from http://stackoverflow.com/a/2450976
-function shuffle(array) {
-    var currentIndex = array.length,
-        temporaryValue, randomIndex;
-
-    while (currentIndex !== 0) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex -= 1;
-        temporaryValue = array[currentIndex];
-        array[currentIndex] = array[randomIndex];
-        array[randomIndex] = temporaryValue;
-    }
-
-    return array;
-}
-
-function Card() {
-    this.isCover = true;
-    this.game = null;
-    this.cardEle = null;
-    let flag = -1;
-    this.iconClass = "";
-
-    this.getFlag = function() {
-        return flag;
-    };
-    this.setFlag = function(f) {
-        flag = f;
-    }
-
-    this.flip = function() {
-        this.isCover = false;
-        $(this.cardEle).addClass("open").addClass("show");
-    };
-
-    this.cover = function() {
-        this.isCover = true;
-        $(this.cardEle).removeClass("open").removeClass("show");
-    };
-
-    this.onMatchFailure = function() {
-        $(this.cardEle).addClass("dismatch");
-        setTimeout(function() {
-            $(this.cardEle).removeClass("dismatch");
-            this.cover();
-        }.bind(this), 500);
-
-    };
-
-    this.onMatchSuccess = function() {
-        $(this.cardEle).addClass("match");
-    };
-
-    this.dealClick = function() {
-        if (this.isCover) {
-            this.flip();
-            this.game.judge(this);
-        }
-    };
-}
-
-function GradeModule() {
-    let stars = $(".stars .fa");
-    let maxGrade = stars.length;
-    var starGrade = maxGrade;
-
-    this.setGrade = function(grade) {
-        starGrade = grade;
-        updateStar.call(this, grade);
-    };
-
-    this.getGrade = function() {
-        return starGrade;
-    }
-
-    function updateStar(grade) {
-        $(stars).addClass("fa-star").removeClass("fa-star-o");
-        if (maxGrade > grade && grade >= 0) {
-            for (let i = maxGrade - 1; i > (grade - 1); i--) {
-                let star = stars[i];
-                $(stars[i]).addClass("fa-star-o").removeClass("fa-star");
-            }
-        }
-
-    }
-}
-
 ;
 (function() {
     var gameManager = new GameManager();
@@ -105,11 +9,17 @@ function GradeModule() {
     gameManager.refresh();
 })();
 
+/**
+ * 游戏管理类，负责初始化一个游戏
+ */
 function GameManager() {
     var game;
     var timer = new Timer();
     var gradeModule = new GradeModule();
 
+    /**
+     * 初始化界面，以及开始一局新游戏
+     */
     this.refresh = function() {
         $(".congratulation").css("display", "none");
         $(".container").css("display", "flex");
@@ -125,6 +35,9 @@ function GameManager() {
         startNewGame.call(this);
     };
 
+    /**
+     * 创建一局新游戏
+     */
     function startNewGame() {
         game = new Game(this);
         game.setGradeModule(gradeModule);
@@ -153,6 +66,10 @@ function GameManager() {
         timer.start();
     }
 
+    /**
+     * 当游戏获胜时的响应方法
+     * @param {玩家步数} step 
+     */
     this.onWin = function(step) {
         timer.stop();
         $(".container").css("display", "none");
@@ -164,6 +81,10 @@ function GameManager() {
 
 }
 
+/**
+ * 代表一局新游戏，包含游戏逻辑处理方法
+ * @param {游戏管理者} manager 
+ */
 function Game(manager) {
     var firstCard = null;
     var secendCard = null;
@@ -177,6 +98,10 @@ function Game(manager) {
         gradeModule = gradem;
     }
 
+    /**
+     * 处理被翻开的卡片，若是第二张则判断是否匹配
+     * @param {最新被翻开的卡片} card 
+     */
     this.judge = function(card) {
         //console.log(card.getFlag());
         setTimeout(function() {
@@ -240,16 +165,119 @@ function Game(manager) {
     }
 }
 
+
+/**
+ * 代表一个卡片类
+ */
+function Card() {
+    this.isCover = true;
+    this.game = null;
+    this.cardEle = null;
+    let flag = -1;
+    this.iconClass = "";
+
+    this.getFlag = function() {
+        return flag;
+    };
+    this.setFlag = function(f) {
+        flag = f;
+    }
+
+    /**
+     * 翻开卡片
+     */
+    this.flip = function() {
+        this.isCover = false;
+        $(this.cardEle).addClass("open").addClass("show");
+    };
+
+    /**
+     * 盖上卡片
+     */
+    this.cover = function() {
+        this.isCover = true;
+        $(this.cardEle).removeClass("open").removeClass("show");
+    };
+
+    /**
+     * 匹配失败时的回调
+     */
+    this.onMatchFailure = function() {
+        $(this.cardEle).addClass("dismatch");
+        setTimeout(function() {
+            $(this.cardEle).removeClass("dismatch");
+            this.cover();
+        }.bind(this), 500);
+
+    };
+
+    /**
+     * 匹配成功时的回调
+     */
+    this.onMatchSuccess = function() {
+        $(this.cardEle).addClass("match");
+    };
+
+    /**
+     * 当界面上与此卡片对象关联的卡片被点击时的处理方法
+     */
+    this.dealClick = function() {
+        if (this.isCover) {
+            this.flip();
+            this.game.judge(this);
+        }
+    };
+}
+
+/**
+ * 等级模块，负责处理页面等级显示等逻辑
+ */
+function GradeModule() {
+    let stars = $(".stars .fa");
+    let maxGrade = stars.length;
+    var starGrade = maxGrade;
+
+    this.setGrade = function(grade) {
+        starGrade = grade;
+        updateStar.call(this, grade);
+    };
+
+    this.getGrade = function() {
+        return starGrade;
+    }
+
+    function updateStar(grade) {
+        $(stars).addClass("fa-star").removeClass("fa-star-o");
+        if (maxGrade > grade && grade >= 0) {
+            for (let i = maxGrade - 1; i > (grade - 1); i--) {
+                let star = stars[i];
+                $(stars[i]).addClass("fa-star-o").removeClass("fa-star");
+            }
+        }
+
+    }
+}
+
+/**
+ * 计时器，可以通过设置回调方法监听每秒事件
+ * @param {每秒钟事件的回调方法} callback 
+ */
 function Timer(callback) {
     var number = 0;
     var listener = arguments[0];
     var timer;
 
+    /**
+     * 开始计时方法
+     */
     this.start = function() {
         number = 0;
         time1.call(this);
     };
 
+    /**
+     * 停止计时方法
+     */
     this.stop = function() {
         if (timer) {
             clearTimeout(timer);
@@ -268,4 +296,24 @@ function Timer(callback) {
         return number;
     }
 
+}
+
+/**
+ * 随机重排列一个数组
+ * @param {希望被随机重排列的数组} array 
+ */
+// Shuffle function from http://stackoverflow.com/a/2450976
+function shuffle(array) {
+    var currentIndex = array.length,
+        temporaryValue, randomIndex;
+
+    while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+    }
+
+    return array;
 }
