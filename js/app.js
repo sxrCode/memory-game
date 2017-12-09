@@ -43,7 +43,6 @@ function Card() {
     this.flip = function() {
         this.isCover = false;
         $(this.cardEle).addClass("open").addClass("show");
-        console.log('card flag: ' + flag);
     };
 
     this.cover = function() {
@@ -52,9 +51,9 @@ function Card() {
     };
 
     this.onMatchFailure = function() {
-        $(this.cardEle).addClass('dismatch');
+        $(this.cardEle).addClass("dismatch");
         setTimeout(function() {
-            $(this.cardEle).removeClass('dismatch');
+            $(this.cardEle).removeClass("dismatch");
             this.cover();
         }.bind(this), 500);
 
@@ -62,11 +61,9 @@ function Card() {
 
     this.onMatchSuccess = function() {
         $(this.cardEle).addClass("match");
-        console.log('flag ' + flag + ' match success!');
     };
 
     this.dealClick = function() {
-        console.log("this.isCover: " + this.isCover);
         if (this.isCover) {
             this.flip();
             this.game.judge(this);
@@ -77,18 +74,19 @@ function Card() {
 function GradeModule() {
     let stars = $(".stars .fa");
     let maxGrade = stars.length;
-    this.grade = maxGrade;
-
-    this.updateMoves = function(step) {
-
-    }
+    var starGrade = maxGrade;
 
     this.setGrade = function(grade) {
+        starGrade = grade;
         updateStar.call(this, grade);
-
     };
 
+    this.getGrade = function() {
+        return starGrade;
+    }
+
     function updateStar(grade) {
+        $(stars).addClass("fa-star").removeClass("fa-star-o");
         if (maxGrade > grade && grade >= 0) {
             for (let i = maxGrade - 1; i > (grade - 1); i--) {
                 let star = stars[i];
@@ -102,29 +100,34 @@ function GradeModule() {
 ;
 (function() {
     var gameManager = new GameManager();
-    $('.restart').bind("click", function() { gameManager.refresh(); });
+    $(".restart").bind("click", function() { gameManager.refresh(); });
+    $(".again").bind("click", function() { gameManager.refresh(); });
     gameManager.refresh();
 })();
 
 function GameManager() {
     var game;
     var timer = new Timer();
+    var gradeModule = new GradeModule();
 
     this.refresh = function() {
+        $(".congratulation").css("display", "none");
+        $(".container").css("display", "flex");
         $(".moves").text("" + 0);
         let cardEles = document.getElementsByClassName("card");
         for (let i = 0; i < cardEles.length; i++) {
             let cardEle = cardEles[i];
             $(cardEle).unbind();
-            $(cardEle).removeClass().addClass('card');
-            $(cardEle).children(".fa").removeClass().addClass('fa');
+            $(cardEle).removeClass().addClass("card");
+            $(cardEle).children(".fa").removeClass().addClass("fa");
         }
-        $(".star .fa").removeClass("fa-star-o").addClass("fa-star");
+        gradeModule.setGrade(3);
         startNewGame.call(this);
     };
 
     function startNewGame() {
         game = new Game(this);
+        game.setGradeModule(gradeModule);
         let icons = ["fa-diamond", "fa-paper-plane-o", "fa-anchor", "fa-bolt", "fa-cube", "fa-leaf", "fa-bicycle", "fa-bomb"];
 
         let cards = [];
@@ -152,7 +155,11 @@ function GameManager() {
 
     this.onWin = function(step) {
         timer.stop();
-        console.log("you are winner with " + step + " step and " + timer.getTime() + " mils!");
+        $(".container").css("display", "none");
+        $(".congratulation").css("display", "flex");
+        $(".con-time").text(timer.getTime());
+        $(".con-moves").text(step);
+        $(".con-stars").text(gradeModule.getGrade());
     }
 
 }
@@ -162,12 +169,16 @@ function Game(manager) {
     var secendCard = null;
     var isFirst = true;
     var matchedGroup = 0;
-    var gradeModule = new GradeModule();
+    var gradeModule;
     let step = 0;
     var gameManager = manager;
 
-    this.judge = function(card) {
+    this.setGradeModule = function(gradem) {
+        gradeModule = gradem;
+    }
 
+    this.judge = function(card) {
+        //console.log(card.getFlag());
         setTimeout(function() {
             if (isFirst) {
                 firstCard = card;
@@ -193,17 +204,18 @@ function Game(manager) {
     }
 
     function grade() {
+        var grade = 0;
         if (step < 16) {
-            console.log("3 star");
-            gradeModule.setGrade(3);
+            grade = 3
         } else if (step < 24) {
-            gradeModule.setGrade(2);
-            console.log("2 star")
+            grade = 2
         } else if (step < 32) {
-            gradeModule.setGrade(1);
-            console.log('1 star');
+            grade = 1
         } else {
-            gradeModule.setGrade(0);
+            grade = 0;
+        }
+        if (gradeModule) {
+            gradeModule.setGrade(grade);
         }
     }
 
